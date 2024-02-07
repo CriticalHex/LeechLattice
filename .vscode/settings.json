@@ -3,6 +3,7 @@
         "array": "cpp",
         "string_view": "cpp",
         "initializer_list": "cpp",
-        "ostream": "cpp"
+        "ostream": "cpp",
+        "cmath": "cpp"
     }
 }

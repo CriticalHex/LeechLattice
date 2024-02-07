@@ -21,7 +21,7 @@ private:
       8943633,  8947473,  9439541,  9474131,  10027161, 10488467, 10526777,
       11141205, 11813905, 12586073, 12632213, 13369395, 13771281, 14749969};
 
-  const int _elevenCycle[24][2] = {
+  const float _elevenCycle[24][2] = {
       {0},    {1, 0},  {1, 1}, {1, 8}, {0},    {2, 0}, {2, 3}, {2, 10},
       {2, 8}, {1, 2},  {1, 9}, {1, 6}, {1, 3}, {2, 9}, {2, 5}, {2, 2},
       {2, 7}, {1, 10}, {1, 5}, {1, 7}, {1, 4}, {2, 1}, {2, 4}, {2, 6}};
@@ -293,8 +293,12 @@ private:
   double _projectedVectors[2][24];
   sf::Vector2f _projectedPoints[100];
   int _width, _height;
+  sf::Color _color = sf::Color(220, 208, 255, 100);
+  sf::Image _filter;
+  sf::Texture _tex;
+  sf::Sprite _sprite;
 
-  void computePointProj();
+  void computeProjectedPoints();
   void computeProjectedVectors(double time);
   void drawLines(sf::RenderWindow &window);
   void drawPoints(sf::RenderWindow &window);
@@ -306,263 +310,10 @@ private:
   // void fillEdges();
 
 public:
-  Lattice(int width, int height);
+  Lattice(int x, int y, int width, int height);
   void update(double time);
   void draw(sf::RenderWindow &window);
   ~Lattice();
 };
 
 #endif
-
-// // The Higman-Sims graph is represented by the 100 elements of the
-// // Leech lattice: (a)the one with coordinates 4 in cells 0 and 4 (and
-// // 0 elsewhere), (b)the ones with -3 in some cell other than 0 or 4
-// // and 1 elsewhere, and (c)the ones with 2 in some octad containing 0
-// // and 4 (and 0 elsewhere).  (These are the 100 points of the lattice
-// // that are at equal distance from Z=the origin, and X and Y = the two
-// // points with coordinates 1 in every cell except 5 in cell 0 or 4.)
-// var hsPoints;
-// function createPoints() {
-//     "use strict";
-//     hsPoints = [];
-//     var t;
-//     // (a)
-//     t = [];
-//     for ( var i=0 ; i<24 ; i++ )
-//         t[i] = (i==0||i==4) ? 4 : 0;
-//     hsPoints.push(t);
-//     // (b)
-//     for ( var j=0 ; j<24 ; j++ )
-//         if ( ! (j==0||j==4) ) {
-//             t = [];
-//             for ( var i=0 ; i<24 ; i++ )
-//                 t[i] = (i==j) ? -3 : 1;
-//             hsPoints.push(t);
-//         }
-//     // (c)
-//     if ( octads22.length != 77 )
-//         throw new Error("This is impossible");
-//     for ( var j=0 ; j<octads22.length ; j++ ) {
-//         t = [];
-//         for ( var i=0 ; i<24 ; i++ )
-//             t[i] = ((octads22[j]>>i)&1) ? 2 : 0;
-//         hsPoints.push(t);
-//     }
-// }
-// createPoints();
-
-// // There is an edge between vertices in the H-S graph when the points
-// // are at square distance 48 in the above choice of coordinates.
-// var edges;
-// function fillEdges() {
-//     "use strict";
-//     if ( hsPoints.length != 100 )
-//         throw new Error("This is impossible");
-//     edges = [];
-//     for ( var i=0 ; i<hsPoints.length ; i++ ) {
-//         for ( var j=0 ; j<i ; j++ ) {
-//             var v = 0;
-//             for ( var k=0 ; k<24 ; k++ ) {
-//                 v +=
-//                 (hsPoints[i][k]-hsPoints[j][k])*(hsPoints[i][k]-hsPoints[j][k]);
-//             }
-//             if ( ! (v==48||v==32) )
-//                 throw new Error("This is impossible");
-//             if ( v == 48 )
-//                 edges.push([j, i]);
-//         }
-//     }
-//     if ( edges.length != 1100 )
-//         throw new Error("This is impossible");
-// }
-// fillEdges();
-
-// // An element of order 11 of the Mathieu group (fixing points 0 and 4,
-// // so, in Mathieu(22)).  It has two fixed points (0 and 4) and 2
-// // orbits of size 11, and the latter are represented by pairs
-// // consisting of an orbit number (1 or 2) and an index within that
-// // orbit.  (So the element takes 1 to 2 to 9 to 12, etc.)
-// var elevenCycle = [
-//     [0], [1, 0], [1, 1], [1, 8],
-//     [0], [2, 0], [2, 3], [2, 10],
-//     [2, 8], [1, 2], [1, 9], [1, 6],
-//     [1, 3], [2, 9], [2, 5], [2, 2],
-//     [2, 7], [1, 10], [1, 5], [1, 7],
-//     [1, 4], [2, 1], [2, 4], [2, 6],
-// ];
-
-// var projVecs;
-// function computeProjVecs(t) {
-//     "use strict";
-//     if ( typeof(projVecs) === "undefined" )
-//         projVecs = [ new Array(24), new Array(24) ];
-//     var renormer = Math.sqrt(11);
-//     for ( var i=0 ; i<24 ; i++ ) {
-//         if ( elevenCycle[i][0] == 0 ) {
-//             projVecs[0][i] = 0;
-//             projVecs[1][i] = 0;
-//         } else if ( elevenCycle[i][0] == 1 ) {
-//             projVecs[0][i] =
-//             Math.cos(2*Math.PI*(elevenCycle[i][1]/11+t))/renormer;
-//             projVecs[1][i] =
-//             -Math.sin(2*Math.PI*(elevenCycle[i][1]/11+t))/renormer;
-//         } else if ( elevenCycle[i][0] == 2 ) {
-//             projVecs[0][i] =
-//             Math.cos(2*Math.PI*(elevenCycle[i][1]/11-t))/renormer;
-//             projVecs[1][i] =
-//             -Math.sin(2*Math.PI*(elevenCycle[i][1]/11-t))/renormer;
-//         }
-//     }
-// }
-
-// var canvas;
-// var ctx;
-
-// var pointProj;
-// function computePointProj() {
-//     "use strict";
-//     if ( typeof(pointProj) === "undefined" ) {
-//         pointProj = new Array(hsPoints.length);
-//         for ( var i=0 ; i<hsPoints.length ; i++ )
-//             pointProj[i] = new Array(2);
-//     }
-//     for ( var i=0 ; i<hsPoints.length ; i++ ) {
-//         var u = 0;
-//         var v = 0;
-//         for ( var j=0 ; j<24 ; j++ ) {
-//             u += hsPoints[i][j] * projVecs[0][j];
-//             v += hsPoints[i][j] * projVecs[1][j];
-//         }
-//         pointProj[i][0] = (canvas.width/2) + (canvas.height/5)*v;
-//         pointProj[i][1] = (canvas.height/2) + (canvas.height/5)*u;
-//     }
-// }
-
-// function drawLines() {
-//     "use strict";
-//     ctx.lineWidth = 0.2;
-//     ctx.strokeStyle = "rgb(0,0,0)";
-//     for ( var n=0 ; n<edges.length ; n++ ) {
-//         var i = edges[n][0];
-//         var j = edges[n][1];
-//         ctx.beginPath();
-//         ctx.moveTo(pointProj[i][0], pointProj[i][1]);
-//         ctx.lineTo(pointProj[j][0], pointProj[j][1]);
-//         ctx.stroke();
-//     }
-// }
-
-// function drawPoints() {
-//     "use strict";
-//     for ( var k=0 ; k<hsPoints.length ; k++ ) {
-//         ctx.fillStyle = "rgb(255,0,0)";
-//         ctx.beginPath();
-//         ctx.arc(pointProj[k][0], pointProj[k][1], 2, 0, Math.PI*2, true);
-//         ctx.closePath();
-//         ctx.fill();
-//     }
-// }
-
-// function initCanvas() {
-//     "use strict";
-//     ctx.lineCap = "round";
-//     ctx.lineJoin = "round";
-// }
-
-// var requestAnimationFrame = window.requestAnimationFrame ||
-// window.mozRequestAnimationFrame || window.webkitRequestAnimationFrame ||
-// window.msRequestAnimationFrame; var haveRequestAnimationFrame =
-// (typeof(requestAnimationFrame)==="function");
-
-// function now() {
-//     "use strict";
-//     var d = new Date();
-//     return d.getTime();
-// }
-
-// var updateFunc;
-// var isRunning;
-// var animationStart;
-// var timeBase;
-// var doLines = true;
-
-// function computeAndDraw(time) {
-//     "use strict";
-//     ctx.clearRect(0,0,canvas.width,canvas.height);
-//     computeProjVecs(time);
-//     computePointProj();
-//     if ( doLines )
-//         drawLines();
-//     // else {
-//     //     ctx.fillStyle = "rgb(128,128,128)";
-//     //     ctx.fillRect(0,0,canvas.width,canvas.height);
-//     // }
-//     drawPoints();
-//     var elt = document.getElementById("time");
-//     while ( elt.firstChild )
-//         elt.removeChild(elt.firstChild);
-//     elt.appendChild(document.createTextNode(time.toFixed(3)));
-// }
-
-// function pauseButton() {
-//     "use strict";
-//     if ( ! updateFunc )
-//         return;
-//     if ( isRunning ) {
-//         isRunning = false;
-//         timeBase = timeBase + (now() - animationStart)/25000;
-//         computeAndDraw(timeBase);
-//     } else {
-//         isRunning = true;
-//         animationStart = now();
-//         if ( haveRequestAnimationFrame )
-//             requestAnimationFrame(updateFunc, canvas);
-//         else
-//             updateFunc();
-//     }
-// }
-
-// function toggleLines() {
-//     "use strict";
-//     if ( ! updateFunc )
-//         return;
-//     doLines = !doLines;
-//     if ( ! isRunning )
-//         computeAndDraw(timeBase);
-// }
-
-// function onLoad() {
-//     "use strict";
-//     canvas = document.getElementById("canvas");
-//     if ( typeof(canvas.getContext) != "function" ) {
-//         alert("Your browser does not support the HTML5 <canvas> element.\n"
-//             + "This page will not function.");
-//         throw("canvas unsupported");
-//     }
-//     ctx = canvas.getContext("2d");
-//     initCanvas();
-//     isRunning = true;
-//     timeBase = 0;
-//     updateFunc = function() {
-//         "use strict";
-//         var time;
-//         if ( ! isRunning )
-//             return;
-//         if ( typeof(animationStart)==="undefined" ) {
-//             animationStart = now();
-//             time = timeBase;
-//         } else {
-//             time = timeBase + (now() - animationStart)/25000;
-//         }
-//         time -= Math.floor(time);
-//         computeAndDraw(time);
-//         if ( haveRequestAnimationFrame )
-//             requestAnimationFrame(updateFunc, canvas);
-//         else
-//             window.setTimeout(updateFunc, 40);
-//     };
-//     if ( haveRequestAnimationFrame )
-//         requestAnimationFrame(updateFunc, canvas);
-//     else
-//         updateFunc();
-// }

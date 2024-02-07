@@ -11,7 +11,6 @@ CXX = g++ #the compiler name
 
 all: $(TARGET) #when you run the make command from terminal as "make" this is called, sends to the target command
 
-
 #the target command, compiles the executable, relies on the .o files, so calls their creator
 #the internal line is the command line command you would type to compile if you didn't have CMake
 $(TARGET): $(OBJECTS) 

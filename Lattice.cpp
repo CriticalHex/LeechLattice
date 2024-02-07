@@ -2,9 +2,25 @@
 
 using namespace std;
 
-Lattice::Lattice(int width, int height) {
+double dist(sf::Vector2f p1, sf::Vector2f p2) {
+  return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
+}
+
+Lattice::Lattice(int x, int y, int width, int height) {
   _width = width;
   _height = height;
+  _filter.create(width, height);
+  _tex.loadFromImage(_filter);
+  _sprite.setTexture(_tex);
+  for (int y = 0; y < height; y++) {
+    for (int x = 0; x < width; x++) {
+      double d = dist(sf::Vector2f(width / 2, height / 2), sf::Vector2f(x, y));
+      double t = d / dist(sf::Vector2f(width / 2, height / 2),
+                          sf::Vector2f(height + 50, height + 50));
+      _filter.setPixel(x, y, sf::Color(0, 0, 0, 255 - (t * 255)));
+    }
+  }
+  _tex.loadFromImage(_filter);
 }
 
 Lattice::~Lattice() {}
@@ -30,20 +46,25 @@ void Lattice::computeProjectedVectors(double time) {
   }
 }
 
-void Lattice::computePointProj() {
+void Lattice::computeProjectedPoints() {
   for (int i = 0; i < 100; i++) {
-    int u = 0;
-    int v = 0;
+    double u = 0;
+    double v = 0;
     for (int j = 0; j < 24; j++) {
       u += _points[i][j] * _projectedVectors[0][j];
       v += _points[i][j] * _projectedVectors[1][j];
     }
     _projectedPoints[i].x = (_width / 2.f) + (_height / 5.f) * v;
     _projectedPoints[i].y = (_height / 2.f) + (_height / 5.f) * u;
+    // cout << u << ", " << v << endl;
   }
 }
 
-void Lattice::draw(sf::RenderWindow &window) { drawLines(window); }
+void Lattice::draw(sf::RenderWindow &window) {
+  drawLines(window);
+  drawPoints(window);
+  // window.draw(_sprite);
+}
 
 void Lattice::drawLines(sf::RenderWindow &window) {
   int i, j, n;
@@ -51,34 +72,26 @@ void Lattice::drawLines(sf::RenderWindow &window) {
     i = _edges[n][0];
     j = _edges[n][1];
     sf::VertexArray vx(sf::PrimitiveType::Lines, 2);
-    vx[0] = sf::Vertex(_projectedPoints[i], sf::Color::Green);
-    vx[1] = sf::Vertex(_projectedPoints[j], sf::Color::Green);
+    vx[0] = sf::Vertex(_projectedPoints[i], _color);
+    vx[1] = sf::Vertex(_projectedPoints[j], _color);
     window.draw(vx);
-    // cout << _projectedPoints[i].x << ", " << _projectedPoints[i].y << " to "
-    //      << _projectedPoints[j].x << ", " << _projectedPoints[j].y << endl;
-    // cout << _edges[n][0] << ", " << _edges[n][1] << endl;
   }
 }
 
 void Lattice::drawPoints(sf::RenderWindow &window) {
   int i, j, n;
   for (n = 0; n < 100; n++) {
-    i = _edges[n][0];
-    j = _edges[n][1];
-    sf::VertexArray vx(sf::PrimitiveType::Lines, 2);
-    vx[0] = sf::Vertex(_projectedPoints[i], sf::Color::Green);
-    vx[1] = sf::Vertex(_projectedPoints[j], sf::Color::Green);
-    window.draw(vx);
-    // cout << _projectedPoints[i].x << ", " << _projectedPoints[i].y << " to "
-    //      << _projectedPoints[j].x << ", " << _projectedPoints[j].y << endl;
-    // cout << _edges[n][0] << ", " << _edges[n][1] << endl;
+    sf::CircleShape circle(2);
+    circle.setOrigin(circle.getRadius(), circle.getRadius());
+    circle.setPosition(_projectedPoints[n]);
+    window.draw(circle);
   }
 }
 
 void Lattice::update(double time) {
   // cout << time << endl;
-  computePointProj();
   computeProjectedVectors(time);
+  computeProjectedPoints();
 }
 
 // void Lattice::printPoints() {

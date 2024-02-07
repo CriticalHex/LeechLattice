@@ -3,9 +3,13 @@
 using namespace std;
 
 int main() {
+  sf::ContextSettings settings;
+  settings.antialiasingLevel = 4;
   sf::RenderWindow window(sf::VideoMode(1920, 1080), "Leech Lattice",
-                          sf::Style::None);
-  Lattice lattice(window.getSize().x, window.getSize().y);
+                          sf::Style::None, settings);
+  window.setVerticalSyncEnabled(true);
+  Lattice lattice(window.getSize().x / 2, window.getSize().y / 2,
+                  window.getSize().x, window.getSize().y);
   sf::Event event;
   sf::Clock time;
   while (window.isOpen()) {
@@ -19,7 +23,7 @@ int main() {
         }
       }
     }
-    lattice.update(time.getElapsedTime().asSeconds() / 25);
+    lattice.update(time.getElapsedTime().asSeconds() / 30);
     window.clear();
     lattice.draw(window);
     window.display();
