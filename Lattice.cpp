@@ -7,6 +7,7 @@ double dist(sf::Vector2f p1, sf::Vector2f p2) {
 }
 
 Lattice::Lattice(int x, int y, int width, int height) {
+  _position = sf::Vector2f(x, y);
   _width = width;
   _height = height;
   _filter.create(width, height);
@@ -14,9 +15,8 @@ Lattice::Lattice(int x, int y, int width, int height) {
   _sprite.setTexture(_tex);
   for (int y = 0; y < height; y++) {
     for (int x = 0; x < width; x++) {
-      double d = dist(sf::Vector2f(width / 2, height / 2), sf::Vector2f(x, y));
-      double t = d / dist(sf::Vector2f(width / 2, height / 2),
-                          sf::Vector2f(height + 50, height + 50));
+      double d = dist(_position, sf::Vector2f(x, y));
+      double t = d / dist(_position, sf::Vector2f(height + 50, height + 50));
       _filter.setPixel(x, y, sf::Color(0, 0, 0, 255 - (t * 255)));
     }
   }
@@ -26,8 +26,6 @@ Lattice::Lattice(int x, int y, int width, int height) {
 Lattice::~Lattice() {}
 
 void Lattice::computeProjectedVectors(double time) {
-  // 11s cause of 11 cycle I guess
-  // COULD refactor because elevenCycle[i][0] is known
   for (int i = 0; i < 24; i++) {
     if (_elevenCycle[i][0] == 0) {
       _projectedVectors[0][i] = 0;
@@ -54,15 +52,14 @@ void Lattice::computeProjectedPoints() {
       u += _points[i][j] * _projectedVectors[0][j];
       v += _points[i][j] * _projectedVectors[1][j];
     }
-    _projectedPoints[i].x = (_width / 2.f) + (_height / 5.f) * v;
-    _projectedPoints[i].y = (_height / 2.f) + (_height / 5.f) * u;
-    // cout << u << ", " << v << endl;
+    _projectedPoints[i].x = _position.x + (_height / 5.f) * v;
+    _projectedPoints[i].y = _position.y + (_height / 5.f) * u;
   }
 }
 
 void Lattice::draw(sf::RenderWindow &window) {
   drawLines(window);
-  drawPoints(window);
+  // drawPoints(window);
   // window.draw(_sprite);
 }
 

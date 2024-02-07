@@ -3,7 +3,6 @@
 
 #include <SFML\Graphics.hpp>
 #include <cmath>
-#include <iostream>
 #include <vector>
 
 class Lattice {
@@ -293,7 +292,10 @@ private:
   double _projectedVectors[2][24];
   sf::Vector2f _projectedPoints[100];
   int _width, _height;
+  sf::Vector2f _position;
   sf::Color _color = sf::Color(220, 208, 255, 100);
+
+  // probably broken if not at center of screen
   sf::Image _filter;
   sf::Texture _tex;
   sf::Sprite _sprite;
