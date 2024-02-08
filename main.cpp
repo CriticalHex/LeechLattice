@@ -1,19 +1,24 @@
 #include "Lattice.h"
+#include "Listener.hpp"
 
 using namespace std;
 
+double smooth(double x) { return 2 * atan(x + .2) / M_PI; }
+
 int main() {
+  Listener listener;
   sf::ContextSettings settings;
   settings.antialiasingLevel = 4;
-  sf::RenderWindow window(sf::VideoMode(1920, 1080), "Leech Lattice",
+  sf::RenderWindow window(sf::VideoMode(1920 * 3, 1080), "Leech Lattice",
                           sf::Style::None, settings);
   window.setVerticalSyncEnabled(true);
   sf::Event event;
   sf::Clock time;
 
-  sf::Vector2f p1(710, 680);
-  sf::Vector2f p2(1210, 680);
-  sf::Vector2f p3(960, 280);
+  sf::Vector2f middle(1920 / 2, 1080 / 2);
+  sf::Vector2f p1(middle);
+  sf::Vector2f p2(middle.x + 1920, middle.y);
+  sf::Vector2f p3(middle.x + 1920 * 2, middle.y);
 
   vector<Lattice *> lattice;
   lattice.push_back(
@@ -35,7 +40,8 @@ int main() {
       }
     }
     for (auto lat : lattice) {
-      lat->update(time.getElapsedTime().asSeconds() / 30);
+      lat->update(time.getElapsedTime().asSeconds() / 30,
+                  smooth(listener.getAudioLevel()));
     }
     window.clear();
     for (auto lat : lattice) {

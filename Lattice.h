@@ -1,6 +1,7 @@
 #ifndef LATTICE_H
 #define LATTICE_H
 
+#include <SFML\Audio.hpp>
 #include <SFML\Graphics.hpp>
 #include <cmath>
 #include <vector>
@@ -295,12 +296,7 @@ private:
   sf::Vector2f _position;
   sf::Color _color = sf::Color(220, 208, 255, 100);
 
-  // probably broken if not at center of screen
-  sf::Image _filter;
-  sf::Texture _tex;
-  sf::Sprite _sprite;
-
-  void computeProjectedPoints();
+  void computeProjectedPoints(double volume);
   void computeProjectedVectors(double time);
   void drawLines(sf::RenderWindow &window);
   void drawPoints(sf::RenderWindow &window);
@@ -313,7 +309,7 @@ private:
 
 public:
   Lattice(int x, int y, int width, int height);
-  void update(double time);
+  void update(double time, double volume);
   void draw(sf::RenderWindow &window);
   ~Lattice();
 };

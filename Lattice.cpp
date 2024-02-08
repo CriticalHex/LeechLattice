@@ -6,21 +6,31 @@ double dist(sf::Vector2f p1, sf::Vector2f p2) {
   return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 }
 
+sf::Color lerpColor(const sf::Color &color1, const sf::Color &color2, float t) {
+  float r = color1.r + t * (color2.r - color1.r);
+  float g = color1.g + t * (color2.g - color1.g);
+  float b = color1.b + t * (color2.b - color1.b);
+  return sf::Color(r, g, b, 100);
+}
+
+sf::Color getColor(float t) {
+  const float hue_range = 360.0f;
+  float hue = fmod(t / 5.0f, 1.0f) * hue_range;
+  int i = int(hue / 60) % 6;
+  float f = hue / 60 - i;
+
+  sf::Color colors[] = {sf::Color::Red,  sf::Color::Yellow, sf::Color::Green,
+                        sf::Color::Cyan, sf::Color::Blue,   sf::Color::Magenta};
+
+  sf::Color color1 = colors[i];
+  sf::Color color2 = colors[(i + 1) % 6];
+  return lerpColor(color1, color2, f);
+}
+
 Lattice::Lattice(int x, int y, int width, int height) {
   _position = sf::Vector2f(x, y);
   _width = width;
   _height = height;
-  _filter.create(width, height);
-  _tex.loadFromImage(_filter);
-  _sprite.setTexture(_tex);
-  for (int y = 0; y < height; y++) {
-    for (int x = 0; x < width; x++) {
-      double d = dist(_position, sf::Vector2f(x, y));
-      double t = d / dist(_position, sf::Vector2f(height + 50, height + 50));
-      _filter.setPixel(x, y, sf::Color(0, 0, 0, 255 - (t * 255)));
-    }
-  }
-  _tex.loadFromImage(_filter);
 }
 
 Lattice::~Lattice() {}
@@ -44,7 +54,7 @@ void Lattice::computeProjectedVectors(double time) {
   }
 }
 
-void Lattice::computeProjectedPoints() {
+void Lattice::computeProjectedPoints(double volume) {
   for (int i = 0; i < 100; i++) {
     double u = 0;
     double v = 0;
@@ -52,8 +62,8 @@ void Lattice::computeProjectedPoints() {
       u += _points[i][j] * _projectedVectors[0][j];
       v += _points[i][j] * _projectedVectors[1][j];
     }
-    _projectedPoints[i].x = _position.x + (_height / 5.f) * v;
-    _projectedPoints[i].y = _position.y + (_height / 5.f) * u;
+    _projectedPoints[i].x = _position.x + (volume * _height / 5.f) * v;
+    _projectedPoints[i].y = _position.y + (volume * _height / 5.f) * u;
   }
 }
 
@@ -85,10 +95,10 @@ void Lattice::drawPoints(sf::RenderWindow &window) {
   }
 }
 
-void Lattice::update(double time) {
-  // cout << time << endl;
+void Lattice::update(double time, double volume) {
   computeProjectedVectors(time);
-  computeProjectedPoints();
+  computeProjectedPoints(volume);
+  _color = getColor(time);
 }
 
 // void Lattice::printPoints() {
