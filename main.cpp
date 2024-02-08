@@ -3,7 +3,7 @@
 
 using namespace std;
 
-double smooth(double x) { return 2 * atan(x + .2) / M_PI; }
+double smooth(double x) { return atan(x + .2); }
 
 int main() {
   Listener listener;
