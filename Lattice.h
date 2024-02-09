@@ -1,7 +1,6 @@
 #ifndef LATTICE_H
 #define LATTICE_H
 
-#include <SFML\Audio.hpp>
 #include <SFML\Graphics.hpp>
 #include <cmath>
 #include <vector>

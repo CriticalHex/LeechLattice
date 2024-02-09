@@ -5,8 +5,8 @@ OBJECTS = $(SRC_FILES:.cpp=.o) #signifies a relationship between the src_files a
 
 INCLUDE_PATH = -I"C:\mingw64\include" #for user installed libraries
 
-LIBS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -lole32 #for user installed libraries, these are specifically for SFML
-LIB_PATH = -L"C:\mingw64\include\libs" #for user installed libraries
+LIBS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -lole32 -lfftw3f #for user installed libraries, these are specifically for SFML
+LIB_PATH = #-L"C:\mingw64\include\libs" #for user installed libraries
 CXX = g++ #the compiler name
 
 all: $(TARGET) #when you run the make command from terminal as "make" this is called, sends to the target command

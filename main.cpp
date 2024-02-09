@@ -3,10 +3,16 @@
 
 using namespace std;
 
-double smooth(double x) { return atan(x + .2); }
+double smooth(double x) {
+  if (x == 0)
+    return 1;
+  return atan(x + .2);
+}
 
 int main() {
   Listener listener;
+  float volume;
+
   sf::ContextSettings settings;
   settings.antialiasingLevel = 4;
   sf::RenderWindow window(sf::VideoMode(1920 * 3, 1080), "Leech Lattice",
@@ -39,9 +45,10 @@ int main() {
         }
       }
     }
+    volume = smooth(listener.getAudioLevel());
+    listener.getFrequencyData();
     for (auto lat : lattice) {
-      lat->update(time.getElapsedTime().asSeconds() / 30,
-                  smooth(listener.getAudioLevel()));
+      lat->update(time.getElapsedTime().asSeconds() / 30, volume);
     }
     window.clear();
     for (auto lat : lattice) {
