@@ -49,6 +49,7 @@
         "typeinfo": "cpp",
         "complex": "cpp",
         "set": "cpp",
-        "sstream": "cpp"
+        "sstream": "cpp",
+        "fstream": "cpp"
     }
 }

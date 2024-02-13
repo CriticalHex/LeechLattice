@@ -3,10 +3,10 @@
 
 using namespace std;
 
-double smooth(double x) {
-  if (x == 0)
-    return 1;
-  return atan(x + .2);
+void smooth(float *x) {
+  if (*x == 0)
+    *x = 1;
+  *x = atan(*x + .2);
 }
 
 int main() {
@@ -20,6 +20,9 @@ int main() {
   window.setVerticalSyncEnabled(true);
   sf::Event event;
   sf::Clock time;
+  sf::Clock frame_clock;
+  UINT frames = 0;
+  UINT framerate = 0;
 
   sf::Vector2f middle(1920 / 2, 1080 / 2);
   sf::Vector2f p1(middle);
@@ -45,7 +48,8 @@ int main() {
         }
       }
     }
-    volume = smooth(listener.getAudioLevel());
+    listener.getAudioLevel(&volume);
+    smooth(&volume);
     listener.getFrequencyData();
     for (auto lat : lattice) {
       lat->update(time.getElapsedTime().asSeconds() / 30, volume);
@@ -55,6 +59,12 @@ int main() {
       lat->draw(window);
     }
     window.display();
+    frames++;
+    if (frame_clock.getElapsedTime().asMilliseconds() >= 1000) {
+      framerate = frames;
+      frames = 0;
+      frame_clock.restart();
+    }
   }
   return 0;
 }

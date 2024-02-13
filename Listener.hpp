@@ -3,13 +3,16 @@
 #include <audioclient.h>
 #include <cmath>
 #include <complex>
+#include <cstdint>
 #include <endpointvolume.h>
 #include <fftw3.h>
+#include <fstream>
 #include <iostream>
 #include <mmdeviceapi.h>
 #include <string>
 #include <vector>
 #include <windows.h>
+
 using namespace std;
 
 __CRT_UUID_DECL(IAudioMeterInformation, 0xC02216F6, 0x8C67, 0x4B5B, 0x9D, 0x00,
@@ -42,28 +45,25 @@ private:
 
   IMMDevice *pAudioCaptureDevice = nullptr;
   IAudioClient *pAudioClient = nullptr;
-  WAVEFORMATEX *pMixFormat;
+  WAVEFORMATEX *pMixFormat = nullptr;
   IAudioCaptureClient *pCaptureClient = nullptr;
   fftwf_plan plan;
   const int SIZE_ESTIMATE = 306;
 
-  vector<float> capturedAudioData;
-  vector<complex<float>> frequencyData;
+  vector<fftwf_complex> capturedAudioData;
   int sampleRate;
   int frequencyDataSize = 25;
 
   UINT32 bufferFrameCount;
   UINT32 numFramesAvailable;
   UINT32 packetLength = 0;
-  BOOL bDone = FALSE;
   BYTE *pData;
   DWORD flags;
 
   void fft();
 
 public:
-  void printAudioMeterInformation();
-  double getAudioLevel();
+  void getAudioLevel(float *out);
   vector<float> getFrequencyData();
   void initialize();
   Listener();
@@ -72,6 +72,7 @@ public:
 };
 
 void Listener::initialize() {
+  REFERENCE_TIME NS_PER_SEC = 1000000000;
   HRESULT hr;
   plan = fftwf_plan_dft_r2c_1d(SIZE_ESTIMATE, nullptr, nullptr, FFTW_ESTIMATE);
 
@@ -101,14 +102,14 @@ void Listener::initialize() {
     cout << "Failed to activate meterInformation device" << endl;
   }
 
-  hr = pDeviceEnumerator->GetDefaultAudioEndpoint(eCapture, eConsole,
-                                                  &pAudioCaptureDevice);
-  if (FAILED(hr)) {
-    cout << "Failed to get audio capture endpoint" << endl;
-  }
+  // hr = pDeviceEnumerator->GetDefaultAudioEndpoint(eCapture, eConsole,
+  //                                                 &pAudioCaptureDevice);
+  // if (FAILED(hr)) {
+  //   cout << "Failed to get audio capture endpoint" << endl;
+  // }
 
-  hr = pAudioCaptureDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL,
-                                     (void **)&pAudioClient);
+  hr = pAudioRenderDevice->Activate(__uuidof(IAudioClient), CLSCTX_ALL, NULL,
+                                    (void **)&pAudioClient);
   if (FAILED(hr)) {
     cout << "Failed to activate audio client" << endl;
   }
@@ -116,10 +117,13 @@ void Listener::initialize() {
   hr = pAudioClient->GetMixFormat(&pMixFormat);
   if (FAILED(hr)) {
     cout << "Failed to set audio format" << endl;
+  } else {
+    cout << "Bits: " << pMixFormat->wBitsPerSample << endl;
   }
 
-  hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, 7000000, 0,
-                                pMixFormat, NULL);
+  hr = pAudioClient->Initialize(AUDCLNT_SHAREMODE_SHARED,
+                                AUDCLNT_STREAMFLAGS_LOOPBACK, 0, 0, pMixFormat,
+                                nullptr);
   if (FAILED(hr)) {
     cout << "Failed to set audio format" << endl;
   }
@@ -188,44 +192,84 @@ Listener::~Listener() {
   fftwf_destroy_plan(plan);
 }
 
-void Listener::printAudioMeterInformation() {
-  float peakValue;
-  float rmsValue;
-
-  pMeterInformation->GetPeakValue(&peakValue);
-
-  cout << "Peak Value: " << peakValue << endl;
-
-  pMeterInformation->GetChannelsPeakValues(1, &rmsValue);
-  cout << "RMS Value: " << rmsValue << endl;
+void Listener::getAudioLevel(float *volume) {
+  pMeterInformation->GetPeakValue(volume);
 }
 
-double Listener::getAudioLevel() {
-  float volume;
-  pMeterInformation->GetPeakValue(&volume);
-  return volume;
-}
-
-void Listener::fft() {
-  frequencyData.resize(capturedAudioData.size());
-
-  cout << capturedAudioData.size() << endl;
-
-  fftwf_execute_dft_r2c(
-      plan, capturedAudioData.data(),
-      reinterpret_cast<fftwf_complex *>(frequencyData.data()));
-}
+void Listener::fft() {}
 
 vector<float> Listener::getFrequencyData() {
-  pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, NULL, NULL);
-  pCaptureClient->ReleaseBuffer(numFramesAvailable);
-  std::vector<float> audioSamples(framesAvailable);
-  for (UINT32 i = 0; i < framesAvailable; ++i) {
-    audioSamples[i] = static_cast<float>(
-        *reinterpret_cast<INT16 *>(pData + i * sizeof(INT16)));
+  HRESULT hr;
+  vector<BYTE> data;
+  hr = pCaptureClient->GetNextPacketSize(&packetLength);
+  if (FAILED(hr)) {
+    cout << "Failed to get the next packet size" << endl;
+  }
+  while (packetLength != 0) {
+    hr = pCaptureClient->GetBuffer(&pData, &numFramesAvailable, &flags, NULL,
+                                   NULL);
+    if (FAILED(hr)) {
+      cout << "Failed to get buffer" << endl;
+    }
+    if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
+      cout << "Got silent" << endl;
+    }
+
+    data.insert(data.end(), pData, pData + numFramesAvailable * sizeof(float));
+
+    hr = pCaptureClient->ReleaseBuffer(numFramesAvailable);
+    if (FAILED(hr)) {
+      cout << "Failed to release the buffer" << endl;
+    }
+
+    hr = pCaptureClient->GetNextPacketSize(&packetLength);
+    if (FAILED(hr)) {
+      cout << "Failed to get the next packet size" << endl;
+    }
   }
 
-  fft();
+  capturedAudioData.clear();
+  capturedAudioData = vector<fftwf_complex>(numFramesAvailable);
+
+  switch (pMixFormat->wBitsPerSample) {
+  case 16: {
+    short *pShortData = reinterpret_cast<short *>(data.data());
+    for (int i = 0; i < numFramesAvailable; ++i) {
+      float sumReal = 0.0f;
+      for (int channel = 0; channel < pMixFormat->nChannels; ++channel) {
+        int index = i * pMixFormat->nChannels + channel;
+        sumReal += static_cast<float>(pShortData[index]);
+      }
+      capturedAudioData[i][0] = sumReal / pMixFormat->nChannels;
+      capturedAudioData[i][1] = 0;
+    }
+    break;
+  }
+  case 32: {
+    float *pFloatData = reinterpret_cast<float *>(data.data());
+    for (int i = 0; i < numFramesAvailable / 4; ++i) {
+      float sumReal = 0.0f;
+      float sumImag = 0.0f;
+      for (int channel = 0; channel < pMixFormat->nChannels; ++channel) {
+        int index = i * pMixFormat->nChannels + channel;
+        sumReal += pFloatData[index];
+      }
+      capturedAudioData[i][0] = sumReal / pMixFormat->nChannels;
+      capturedAudioData[i][1] = 0;
+    }
+    break;
+  }
+  default: {
+    return vector<float>();
+    break;
+  }
+  }
+  fftwf_plan fftPlan =
+      fftwf_plan_dft_1d(numFramesAvailable, capturedAudioData.data(),
+                        capturedAudioData.data(), FFTW_FORWARD, FFTW_ESTIMATE);
+  fftwf_execute(fftPlan);
+
+  fftwf_destroy_plan(fftPlan);
 
   // // Calculate frequency resolution
   // double frequencyResolution =
