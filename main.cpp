@@ -57,6 +57,7 @@ int main() {
     }
     // listener.getAudioLevel(&volume);
     // smooth(&volume);
+
     volumes = listener.getFrequencyData();
     for (auto lat : lattice) {
       lat->update(time.getElapsedTime().asSeconds() / 30, volumes);

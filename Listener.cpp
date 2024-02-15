@@ -51,6 +51,7 @@ void Listener::initialize() {
   } else {
     cout << "Bits: " << pMixFormat->wBitsPerSample << endl;
     cout << "Sample Rate: " << pMixFormat->nSamplesPerSec << endl;
+    cout << "Channels: " << pMixFormat->nChannels << endl;
 
     sampleRate = pMixFormat->nSamplesPerSec;
     // fftOutput.resize(sampleRate);
@@ -150,9 +151,9 @@ vector<float> Listener::getFrequencyData() {
     if (FAILED(hr)) {
       cout << "Failed to get buffer" << endl;
     }
-    if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
-      cout << "Got silent" << endl;
-    }
+    // if (flags & AUDCLNT_BUFFERFLAGS_SILENT) {
+    //   cout << "Got silent" << endl;
+    // }
 
     data.insert(data.end(), pBufferData,
                 pBufferData + numFramesRetrieved * sizeof(BYTE));
@@ -170,36 +171,30 @@ vector<float> Listener::getFrequencyData() {
 
   if (data.size() != 0) {
     // cout << "D: " << data.size() << endl;
-    //data.size() is at least 480 and at most 1056
+    // data.size() is at least sampleRate/100 and at most bufferFrameCount
     size_t numFrames = data.size() / (pMixFormat->nChannels * sizeof(float));
 
-    complexData.clear();
-    complexData = vector<fftwf_complex>(numFrames);
+    vector<float> mergedChannelData(numFrames);
 
     switch (pMixFormat->wBitsPerSample) {
     case 16: {
-      short *pShortData = reinterpret_cast<short *>(data.data());
-      for (int i = 0; i < numFramesRetrieved; ++i) {
-        float sumReal = 0.0f;
-        for (int channel = 0; channel < pMixFormat->nChannels; ++channel) {
-          int index = i * pMixFormat->nChannels + channel;
-          sumReal += static_cast<float>(pShortData[index]);
-        }
-        complexData[i][0] = sumReal / pMixFormat->nChannels;
-        complexData[i][1] = 0;
-      }
+      return vector<float>(frequencyBins);
+      // i no wanna :(
       break;
     }
     case 32: {
+      // creating new array compressing the BYTES in data to FLOATS, so size
+      // shrinks by sizeof(float) (4)
       float *pFloatData = reinterpret_cast<float *>(data.data());
+
+      // numFrames is theoretically half the size of the above array
       for (int i = 0; i < numFrames; i++) {
-        float sumReal = 0.0f;
+        float sum = 0.0f;
         for (int channel = 0; channel < pMixFormat->nChannels; channel++) {
           int index = i * pMixFormat->nChannels + channel;
-          sumReal += pFloatData[index];
+          sum += pFloatData[index];
         }
-        complexData[i][0] = sumReal / pMixFormat->nChannels;
-        complexData[i][1] = 0;
+        mergedChannelData[i] = sum / pMixFormat->nChannels;
       }
       break;
     }
@@ -208,37 +203,35 @@ vector<float> Listener::getFrequencyData() {
       break;
     }
     }
-    // cout << complexData.size() << endl;
 
-    // // windowing
-    // for (int i = 0; i < numFrames; ++i) {
-    //   float windowFactor = 0.5f * (1 - cos(2 * M_PI * i /
-    //   (numFrames - 1))); complexData[i][0] *= windowFactor;
-    // }
+    // windowing
+    for (int i = 0; i < numFrames; ++i) {
+      float windowFactor = 0.5f * (1 - cos(2 * M_PI * i / (numFrames - 1)));
+      mergedChannelData[i] *= windowFactor;
+    }
 
-    fftwf_plan fftPlan =
-        fftwf_plan_dft_1d(numFrames, complexData.data(), complexData.data(),
-                          FFTW_FORWARD, FFTW_ESTIMATE);
+    fftOutput = vector<fftwf_complex>(numFrames / 2 + 1);
+
+    fftwf_plan fftPlan = fftwf_plan_dft_r2c_1d(
+        numFrames, mergedChannelData.data(), fftOutput.data(), FFTW_ESTIMATE);
     fftwf_execute(fftPlan);
 
     fftwf_destroy_plan(fftPlan);
   }
 
-  // Calculate frequency resolution
-  double frequencyResolution = double(sampleRate) / complexData.size();
+  float samplesPerIndex = float(sampleRate) / fftOutput.size();
+
+  // for every combination this seems to be:
+  // 13
+  int maxIndex = 10000 / samplesPerIndex;
+  // 0
+  int minIndex = 20 / samplesPerIndex;
 
   // Calculate volume at each frequency band
   vector<float> frequencyVolumes(frequencyBins, 0.0f);
-  for (int i = 0; i < complexData.size(); i++) {
-    // Calculate frequency corresponding to current FFT bin
-    double frequency = i * frequencyResolution;
-
-    // Determine which frequency band this frequency belongs to
-    int bandIndex = int(floor((frequency / sampleRate) * frequencyBins));
-    if (bandIndex >= 0 && bandIndex < frequencyBins) {
-      // Accumulate amplitude for the corresponding band
-      frequencyVolumes[bandIndex] += abs(complexData[i]);
-    }
+  for (int i = minIndex; i < maxIndex; i++) {
+    int bandIndex = minIndex + (frequencyBins * i / float(maxIndex));
+    frequencyVolumes[bandIndex] += abs(fftOutput[i]);
   }
 
   // Normalize volume values

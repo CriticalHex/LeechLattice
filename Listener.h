@@ -41,7 +41,6 @@ private:
   fftwf_plan plan;
   const int SIZE_ESTIMATE = 306;
 
-  std::vector<fftwf_complex> complexData;
   std::vector<fftwf_complex> fftOutput;
   int sampleRate;
   int frequencyBins = 25;
