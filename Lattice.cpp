@@ -27,10 +27,11 @@ sf::Color getColor(float t) {
   return lerpColor(color1, color2, f);
 }
 
-Lattice::Lattice(int x, int y, int width, int height) {
+Lattice::Lattice(int x, int y, int width, int height, int frequencyBand) {
   _position = sf::Vector2f(x, y);
   _width = width;
   _height = height;
+  _frequencyBand = frequencyBand;
 }
 
 Lattice::~Lattice() {}
@@ -98,6 +99,12 @@ void Lattice::drawPoints(sf::RenderWindow &window) {
 void Lattice::update(double time, double volume) {
   computeProjectedVectors(time);
   computeProjectedPoints(volume);
+  _color = getColor(time);
+}
+
+void Lattice::update(double time, vector<float> volume) {
+  computeProjectedVectors(time);
+  computeProjectedPoints(volume[_frequencyBand]);
   _color = getColor(time);
 }
 
