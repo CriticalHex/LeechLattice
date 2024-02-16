@@ -11,7 +11,7 @@ void smooth(float *x) {
 }
 
 int main() {
-  const UINT frequencies = 1920 * 3;
+  const UINT frequencies = 1920;
   enum renderModes { RECTANGLE, LATTICE_VOL, LATTICE_FREQ };
   int renderMode = LATTICE_VOL;
   Listener listener(frequencies);
@@ -78,10 +78,10 @@ int main() {
       for (auto rec : rects) {
         rec->update(time.getElapsedTime().asSeconds() / 30, volumes);
       }
+      break;
     case LATTICE_VOL:
       listener.getAudioLevel(&volume);
       smooth(&volume);
-      volumes = listener.getFrequencyData();
       for (auto lat : lattice) {
         lat->update(time.getElapsedTime().asSeconds() / 30, volume);
       }
@@ -91,6 +91,7 @@ int main() {
       for (auto lat : lattice) {
         lat->update(time.getElapsedTime().asSeconds() / 30, volumes);
       }
+      break;
     }
 
     window.clear();
@@ -117,9 +118,20 @@ int main() {
       frame_clock.restart();
     }
   }
-  for (int i = 0; i < frequencies; i++) {
-    delete lattice[0];
+  switch (renderMode) {
+  case RECTANGLE:
+    for (int i = 0; i < rects.size(); i++) {
+      delete rects[i];
+    }
+    rects.clear();
+    break;
+  case LATTICE_VOL:
+  case LATTICE_FREQ:
+    for (int i = 0; i < lattice.size(); i++) {
+      delete lattice[i];
+    }
+    lattice.clear();
+    break;
   }
-  lattice.clear();
   return 0;
 }

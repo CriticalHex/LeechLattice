@@ -140,9 +140,24 @@ float lerp(float start, float end, float t) {
   return start + t * (end - start);
 }
 
+float perp(const std::vector<Point> &points, float x) {
+  float result = 0.0;
+  for (size_t i = 0; i < points.size(); i++) {
+    float term = points[i].y;
+    for (size_t j = 0; j < points.size(); j++) {
+      if (i != j && points[i].x != points[j].x) {
+        term *= (x - points[j].x) / (points[i].x - points[j].x);
+      }
+    }
+    result += term;
+  }
+  return result;
+}
+
 vector<float> Listener::getFrequencyData() {
   HRESULT hr;
   vector<BYTE> data;
+  vector<float> frequencyVolumes(frequencyBins, 0.0f);
   hr = pCaptureClient->GetNextPacketSize(&packetLength);
   if (FAILED(hr)) {
     cout << "Failed to get the next packet size" << endl;
@@ -221,40 +236,51 @@ vector<float> Listener::getFrequencyData() {
     fftwf_execute(fftPlan);
 
     fftwf_destroy_plan(fftPlan);
-  }
 
-  float samplesPerIndex = float(sampleRate) / fftOutput.size();
+    float samplesPerIndex = float(sampleRate) / fftOutput.size();
 
-  // for every combination this seems to be:
-  // 13
-  int maxIndex = ceil(20000.f / samplesPerIndex);
-  // 0
-  int minIndex = floor(20.f / samplesPerIndex);
+    // for every combination this seems to be:
+    // 13
+    int maxIndex = ceil(20000.f / samplesPerIndex);
+    // 0
+    int minIndex = floor(20.f / samplesPerIndex);
 
-  float renderSize = maxIndex - minIndex;
+    float renderSize = maxIndex - minIndex + 1;
 
-  vector<float> frequencyVolumes(frequencyBins, 0.0f);
+    float binsPerFFTBin = frequencyBins / renderSize;
 
-  float binsPerFFTBin = frequencyBins / renderSize;
-
-  // for each rendered bin
-  float atIndex;
-  float atNextIndex;
-  for (int i = minIndex; i < maxIndex; i++) {
-    atIndex = abs(fftOutput[i]);
-    atNextIndex = abs(fftOutput[i + 1]);
-    for (int j = 0; j < binsPerFFTBin; j++) {
-      frequencyVolumes[j + (binsPerFFTBin * i)] =
-          lerp(atIndex, atNextIndex, j / binsPerFFTBin);
+    // linear interpolation
+    float atIndex;
+    float atNextIndex;
+    for (int i = minIndex; i < maxIndex; i++) {
+      atIndex = abs(fftOutput[i]);
+      atNextIndex = abs(fftOutput[i + 1]);
+      for (int j = 0; j < binsPerFFTBin; j++) {
+        frequencyVolumes[j + (binsPerFFTBin * i)] =
+            lerp(atIndex, atNextIndex, j / binsPerFFTBin);
+      }
     }
-  }
 
-  // Normalize volume values
-  float maxVolume =
-      *max_element(frequencyVolumes.begin(), frequencyVolumes.end());
-  if (maxVolume > 0) {
-    for (int i = 0; i < frequencyVolumes.size(); ++i) {
-      frequencyVolumes[i] /= maxVolume;
+    // polynomial interpolation
+    // vector<Point> points;
+    // // cout << "{";
+    // for (int i = minIndex; i <= maxIndex; i++) {
+    //   Point point(i / float(maxIndex), abs(fftOutput[i]));
+    //   // cout << "Point(" << point.x << ", " << point.y << "), ";
+    //   points.push_back(point);
+    // }
+    // // cout << "}" << endl;
+    // for (int i = 0; i < frequencyBins; i++) {
+    //   frequencyVolumes[i] = perp(points, i / float(frequencyBins));
+    // }
+
+    // Normalize volume values
+    float maxVolume =
+        *max_element(frequencyVolumes.begin(), frequencyVolumes.end());
+    if (maxVolume > 0) {
+      for (int i = 0; i < frequencyVolumes.size(); ++i) {
+        frequencyVolumes[i] /= maxVolume;
+      }
     }
   }
 

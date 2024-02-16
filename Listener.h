@@ -30,6 +30,17 @@ public:
       DWORD * pdwHardwareSupportMask) = 0;
 };
 
+class Point {
+public:
+  inline Point(float a, float b) {
+    x = a;
+    y = b;
+  }
+  inline Point() { x = y = 0.f; }
+  float x;
+  float y;
+};
+
 class Listener {
 private:
   IMMDeviceEnumerator *pDeviceEnumerator = nullptr;
