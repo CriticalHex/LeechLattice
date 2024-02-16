@@ -136,6 +136,10 @@ void Listener::getAudioLevel(float *volume) {
 
 float abs(fftwf_complex v) { return sqrt(v[0] * v[0] + v[1] * v[1]); }
 
+float lerp(float start, float end, float t) {
+  return start + t * (end - start);
+}
+
 vector<float> Listener::getFrequencyData() {
   HRESULT hr;
   vector<BYTE> data;
@@ -223,15 +227,26 @@ vector<float> Listener::getFrequencyData() {
 
   // for every combination this seems to be:
   // 13
-  int maxIndex = 10000 / samplesPerIndex;
+  int maxIndex = ceil(20000.f / samplesPerIndex);
   // 0
-  int minIndex = 20 / samplesPerIndex;
+  int minIndex = floor(20.f / samplesPerIndex);
 
-  // Calculate volume at each frequency band
+  float renderSize = maxIndex - minIndex;
+
   vector<float> frequencyVolumes(frequencyBins, 0.0f);
+
+  float binsPerFFTBin = frequencyBins / renderSize;
+
+  // for each rendered bin
+  float atIndex;
+  float atNextIndex;
   for (int i = minIndex; i < maxIndex; i++) {
-    int bandIndex = minIndex + (frequencyBins * i / float(maxIndex));
-    frequencyVolumes[bandIndex] += abs(fftOutput[i]);
+    atIndex = abs(fftOutput[i]);
+    atNextIndex = abs(fftOutput[i + 1]);
+    for (int j = 0; j < binsPerFFTBin; j++) {
+      frequencyVolumes[j + (binsPerFFTBin * i)] =
+          lerp(atIndex, atNextIndex, j / binsPerFFTBin);
+    }
   }
 
   // Normalize volume values

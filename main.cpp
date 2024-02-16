@@ -1,5 +1,6 @@
 #include "Lattice.h"
 #include "Listener.h"
+#include "Rectangle.h"
 
 using namespace std;
 
@@ -10,7 +11,7 @@ void smooth(float *x) {
 }
 
 int main() {
-  const UINT frequencies = 25;
+  const UINT frequencies = 1920 * 3;
   Listener listener(frequencies);
   float volume;
   vector<float> volumes;
@@ -38,10 +39,18 @@ int main() {
   //     new Lattice(p2.x, p2.y, window.getSize().x, window.getSize().y));
   // lattice.push_back(
   //     new Lattice(p3.x, p3.y, window.getSize().x, window.getSize().y));
-  for (int i = 1; i <= frequencies; i++) {
-    lattice.push_back(new Lattice((window.getSize().x / (frequencies + 1)) * i,
-                                  middle.y, window.getSize().x / 5,
-                                  window.getSize().y / 5, i - 1));
+  // for (int i = 1; i <= frequencies; i++) {
+  //   lattice.push_back(new Lattice((window.getSize().x / (frequencies + 1)) *
+  //   i,
+  //                                 middle.y, window.getSize().x / 5,
+  //                                 window.getSize().y / 5, i - 1));
+  // }
+
+  vector<au::Rectangle *> rects;
+  for (int i = 0; i < frequencies; i++) {
+    rects.push_back(new au::Rectangle(
+        (window.getSize().x / float(frequencies)) * i, window.getSize().y,
+        window.getSize().x / float(frequencies), window.getSize().y, i));
   }
 
   while (window.isOpen()) {
@@ -59,12 +68,18 @@ int main() {
     // smooth(&volume);
 
     volumes = listener.getFrequencyData();
-    for (auto lat : lattice) {
-      lat->update(time.getElapsedTime().asSeconds() / 30, volumes);
+    // for (auto lat : lattice) {
+    //   lat->update(time.getElapsedTime().asSeconds() / 30, volumes);
+    // }
+    for (auto rec : rects) {
+      rec->update(volumes);
     }
     window.clear();
-    for (auto lat : lattice) {
-      lat->draw(window);
+    // for (auto lat : lattice) {
+    //   lat->draw(window);
+    // }
+    for (auto rec : rects) {
+      rec->draw(window);
     }
     window.display();
     frames++;

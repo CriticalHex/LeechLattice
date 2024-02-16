@@ -1,5 +1,5 @@
 TARGET = LeechLattice.exe #the name of the compiled executable
-SRC_FILES = main.cpp Lattice.cpp Listener.cpp
+SRC_FILES = main.cpp Lattice.cpp Listener.cpp Rectangle.cpp
 
 OBJECTS = $(SRC_FILES:.cpp=.o) #signifies a relationship between the src_files and their to be compiled .o files
 
@@ -34,6 +34,7 @@ run:
 
 #the dependency tree, main.o needs main.cpp, which needs the two classes it uses,
 #so those get compiled, but they depend on something, etc
-main.o: main.cpp Lattice.o Listener.o
+main.o: main.cpp Lattice.o Listener.o Rectangle.o
 Lattice.o: Lattice.cpp
 Listener.o: Listener.cpp
+Rectangle.o: Rectangle.cpp

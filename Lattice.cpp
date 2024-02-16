@@ -102,9 +102,11 @@ void Lattice::update(double time, double volume) {
   _color = getColor(time);
 }
 
+float smooth(float x) { return atan(x + .2); }
+
 void Lattice::update(double time, vector<float> volume) {
   computeProjectedVectors(time);
-  computeProjectedPoints(volume[_frequencyBand]);
+  computeProjectedPoints(smooth(volume[_frequencyBand]));
   _color = getColor(time);
 }
 
