@@ -13,7 +13,7 @@ private:
   float _maxHeight;
 
 public:
-  void update(std::vector<float> volume);
+  void update(float time, std::vector<float> volume);
   void draw(sf::RenderWindow &window);
   Rectangle(int x, int y, int width, int height, int band);
   ~Rectangle();

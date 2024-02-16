@@ -1,3 +1,5 @@
+#ifndef LISTENER_H
+#define LISTENER_H
 
 #include <algorithm>
 #include <audioclient.h>
@@ -59,3 +61,5 @@ public:
   Listener(int _frequencyBins);
   ~Listener();
 };
+
+#endif

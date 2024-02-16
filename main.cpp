@@ -76,7 +76,7 @@ int main() {
     case RECTANGLE:
       volumes = listener.getFrequencyData();
       for (auto rec : rects) {
-        rec->update(volumes);
+        rec->update(time.getElapsedTime().asSeconds() / 30, volumes);
       }
     case LATTICE_VOL:
       listener.getAudioLevel(&volume);

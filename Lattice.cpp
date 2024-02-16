@@ -6,14 +6,15 @@ double dist(sf::Vector2f p1, sf::Vector2f p2) {
   return sqrt(pow(p1.x - p2.x, 2) + pow(p1.y - p2.y, 2));
 }
 
-sf::Color lerpColor(const sf::Color &color1, const sf::Color &color2, float t) {
+static sf::Color lerpColor(const sf::Color &color1, const sf::Color &color2,
+                           float t) {
   float r = color1.r + t * (color2.r - color1.r);
   float g = color1.g + t * (color2.g - color1.g);
   float b = color1.b + t * (color2.b - color1.b);
   return sf::Color(r, g, b, 100);
 }
 
-sf::Color getColor(float t) {
+static sf::Color getColor(float t) {
   const float hue_range = 360.0f;
   float hue = fmod(t / 5.0f, 1.0f) * hue_range;
   int i = int(hue / 60) % 6;
