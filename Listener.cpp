@@ -245,7 +245,7 @@ vector<float> Listener::getFrequencyData() {
     // 0
     int minIndex = floor(20.f / samplesPerIndex);
 
-    float renderSize = maxIndex - minIndex + 1;
+    float renderSize = maxIndex - minIndex;
 
     float binsPerFFTBin = frequencyBins / renderSize;
 
