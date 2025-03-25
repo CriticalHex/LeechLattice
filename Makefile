@@ -1,11 +1,11 @@
 TARGET = LeechLattice.exe #the name of the compiled executable
-SRC_FILES = main.cpp Lattice.cpp Listener.cpp Rectangle.cpp
+SRC_FILES = main.cpp Lattice.cpp
 
 OBJECTS = $(SRC_FILES:.cpp=.o) #signifies a relationship between the src_files and their to be compiled .o files
 
 INCLUDE_PATH = -I"C:\mingw64\include" #for user installed libraries
 
-LIBS = -lsfml-graphics -lsfml-window -lsfml-system -lsfml-audio -lole32 -lfftw3f #for user installed libraries, these are specifically for SFML
+LIBS = -lsfml-graphics -lsfml-window -lsfml-system #for user installed libraries, these are specifically for SFML
 LIB_PATH = #-L"C:\mingw64\include\libs" #for user installed libraries
 CXX = g++ #the compiler name
 
@@ -34,7 +34,5 @@ run:
 
 #the dependency tree, main.o needs main.cpp, which needs the two classes it uses,
 #so those get compiled, but they depend on something, etc
-main.o: main.cpp Lattice.o Listener.o Rectangle.o
+main.o: main.cpp Lattice.o
 Lattice.o: Lattice.cpp
-Listener.o: Listener.cpp
-Rectangle.o: Rectangle.cpp

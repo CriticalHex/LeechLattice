@@ -296,7 +296,7 @@ private:
   sf::Color _color = sf::Color(220, 208, 255, 100);
   int _frequencyBand;
 
-  void computeProjectedPoints(double volume);
+  void computeProjectedPoints();
   void computeProjectedVectors(double time);
   void drawLines(sf::RenderWindow &window);
   void drawPoints(sf::RenderWindow &window);
@@ -309,8 +309,7 @@ private:
 
 public:
   Lattice(int x, int y, int width, int height, int frequencyBand = 0);
-  void update(double time, double volume);
-  void update(double time, std::vector<float> volume);
+  void update(double time);
   void draw(sf::RenderWindow &window);
   ~Lattice();
 };

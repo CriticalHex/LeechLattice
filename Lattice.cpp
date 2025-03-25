@@ -56,7 +56,7 @@ void Lattice::computeProjectedVectors(double time) {
   }
 }
 
-void Lattice::computeProjectedPoints(double volume) {
+void Lattice::computeProjectedPoints() {
   for (int i = 0; i < 100; i++) {
     double u = 0;
     double v = 0;
@@ -64,8 +64,8 @@ void Lattice::computeProjectedPoints(double volume) {
       u += _points[i][j] * _projectedVectors[0][j];
       v += _points[i][j] * _projectedVectors[1][j];
     }
-    _projectedPoints[i].x = _position.x + (volume * _height / 5.f) * v;
-    _projectedPoints[i].y = _position.y + (volume * _height / 5.f) * u;
+    _projectedPoints[i].x = _position.x + (_height / 5.f) * v;
+    _projectedPoints[i].y = _position.y + (_height / 5.f) * u;
   }
 }
 
@@ -97,17 +97,9 @@ void Lattice::drawPoints(sf::RenderWindow &window) {
   }
 }
 
-void Lattice::update(double time, double volume) {
+void Lattice::update(double time) {
   computeProjectedVectors(time);
-  computeProjectedPoints(volume);
-  _color = getColor(time);
-}
-
-float smooth(float x) { return atan(x + .2); }
-
-void Lattice::update(double time, vector<float> volume) {
-  computeProjectedVectors(time);
-  computeProjectedPoints(smooth(volume[_frequencyBand]));
+  computeProjectedPoints();
   _color = getColor(time);
 }
 
